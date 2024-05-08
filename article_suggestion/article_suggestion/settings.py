@@ -84,7 +84,7 @@ WSGI_APPLICATION = 'article_suggestion.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'djongo',
-        'NAME': 'mydatabase',
+        'NAME': 'article_project',
         'ENFORCE_SCHEMA': False,
         'CLIENT': {
             'host': 'mongodb://localhost:27017',
