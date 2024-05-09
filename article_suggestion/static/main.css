@@ -11,6 +11,7 @@ body {
     position: relative;
     top: 20%;
     margin: auto;
+    margin-top: 7%;
     width: 340px;
     height: 445px;
     border-radius: 0.35em;
@@ -23,6 +24,7 @@ body {
     position: relative;
     top: 20%;
     margin: auto;
+    margin-top: 2%;
     width: 340px;
     height: 550px;
     border-radius: 0.35em;

@@ -23,14 +23,14 @@
             <i class="material-icons lock">lock</i> Register
         </div>
 
-        <form id="register" action="{% url 'index' %}" method="post">
+        <form id="register" action="{% url 'register_db' %}" method="post">
             {% csrf_token %}
 
             <div class="input">
                 <div class="input-addon">
                     <i class="material-icons">face</i>
                 </div>
-                <input id="username" placeholder="Full Name" type="text" required class="validate" autocomplete="off">
+                <input id="fullname" name="fullname" placeholder="Full Name" type="text" required class="validate" autocomplete="off">
             </div>
 
             <div class="clearfix"></div>
@@ -40,7 +40,7 @@
                 <div class="input-addon">
                     <i class="material-icons">email</i>
                 </div>
-                <input id="email" placeholder="Email" type="email" required class="validate" autocomplete="off">
+                <input id="email" name="email" placeholder="Email" type="email" required class="validate" autocomplete="off">
             </div>
 
             <div class="clearfix"></div>
@@ -62,7 +62,7 @@
                 <div class="input-addon">
                     <i class="material-icons">cake</i>
                 </div>
-                <input type="date" class="custom-date-input" name="dogum_tarihi" id="id_dogum_tarihi" placeholder="Doğum Tarihi">
+                <input type="date" class="custom-date-input" name="birth_date" id="id_dogum_tarihi" placeholder="Doğum Tarihi">
             </div>
 
             <div class="clearfix"></div>
@@ -71,7 +71,7 @@
                 <div class="input-addon">
                     <i class="material-icons">vpn_key</i>
                 </div>
-                <input id="password" placeholder="Password" type="password" required class="validate" autocomplete="off">
+                <input id="password" name="password" placeholder="Password" type="password" required class="validate" autocomplete="off">
             </div>
             <br>
             <input type="submit" value="Register" />

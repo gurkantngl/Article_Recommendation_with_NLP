@@ -27,9 +27,9 @@
             {% csrf_token %}
             <div class="input">
                 <div class="input-addon">
-                    <i class="material-icons">face</i>
+                    <i class="material-icons">email</i>
                 </div>
-                <input id="username" placeholder="Full Name" type="text" required class="validate" autocomplete="off">
+                <input id="email" name="email" placeholder="Email" type="email" required class="validate" autocomplete="off">
             </div>
 
             <div class="clearfix"></div>
@@ -41,7 +41,7 @@
                 <input id="password" placeholder="Password" type="password" required class="validate"
                     autocomplete="off">
             </div>
-
+            <br>
             <input type="submit" value="Log In" />
         </form>
         
