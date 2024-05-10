@@ -23,7 +23,7 @@
             <i class="material-icons lock">lock</i> Login
         </div>
 
-        <form id="login" action="{% url 'main_page' %}" method="post">
+        <form id="login" action="{% url 'login-db' %}" method="post">
             {% csrf_token %}
             <div class="input">
                 <div class="input-addon">
@@ -38,7 +38,7 @@
                 <div class="input-addon">
                     <i class="material-icons">vpn_key</i>
                 </div>
-                <input id="password" placeholder="Password" type="password" required class="validate"
+                <input id="password" name="password" placeholder="Password" type="password" required class="validate"
                     autocomplete="off">
             </div>
             <br>

@@ -69,9 +69,39 @@
 
             <div class="input">
                 <div class="input-addon">
+                    <i class="material-icons">label</i>
+                </div>
+                    <select id="interestSelect">
+                        {% for interest in interestList %}
+                        <option value="{{ interest|lower }}">{{ interest }}</option>
+                        {% endfor %}
+                    </select>
+            </div>
+
+
+            <div class="clearfix"></div>
+
+            <br>
+            <div>
+                <input type="submit" value="Add Interest" />
+            </div>
+
+            <div class="clearfix"></div>
+            
+            <div class="input">
+                <div class="input-addon">
                     <i class="material-icons">vpn_key</i>
                 </div>
                 <input id="password" name="password" placeholder="Password" type="password" required class="validate" autocomplete="off">
+            </div>
+
+            <div class="clearfix"></div>
+
+            <div class="input">
+                <div class="input-addon">
+                    <i class="material-icons">vpn_key</i>
+                </div>
+                <input id="confirm_password" name="confirm_password" placeholder="Confirm Password" type="password" required class="validate" autocomplete="off">
             </div>
             <br>
             <input type="submit" value="Register" />

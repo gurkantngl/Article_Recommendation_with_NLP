@@ -40,6 +40,7 @@ class User(AbstractBaseUser):
         max_length=255,
         unique=True,
     )
+    
     full_name = models.CharField(max_length=50)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     birth_date = models.DateField()
