@@ -3,12 +3,13 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 from djongo import models as djongo_models
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, full_name, gender, birth_date, password=None, interests=None):
+    def create_user(self, email, full_name, gender, birth_date, username, password=None, interests=None):
         if not email:
             raise ValueError('Users must have an email address')
 
         user = self.model(
             email=self.normalize_email(email),
+            username = email,
             full_name=full_name,
             gender=gender,
             birth_date=birth_date,
@@ -21,7 +22,8 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email, full_name, gender, birth_date, password=None):
         user = self.create_user(
-            email,
+            email = email,
+            username = email,
             full_name=full_name,
             gender=gender,
             birth_date=birth_date,
@@ -44,6 +46,7 @@ class User(AbstractBaseUser):
     )
     
     full_name = models.CharField(max_length=50)
+    username = models.CharField(max_length=100, unique=True)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     birth_date = models.DateField()
     interests = djongo_models.JSONField(default=list)
@@ -53,7 +56,7 @@ class User(AbstractBaseUser):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['full_name', 'gender', 'birth_date']
 
     def __str__(self):

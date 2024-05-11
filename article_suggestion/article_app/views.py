@@ -47,11 +47,12 @@ def register_db(request):
         user = User.objects.create_user(
             email=email,
             full_name=fullname,
+            username=email,
             gender=gender,
             birth_date=birth_date,
             password=password,
+            interests=interestList
         )
-        user.interests = interestList
         user.save()
         
         return redirect('index')
@@ -63,9 +64,9 @@ def login_db(request):
         email = request.POST.get('email')
         password = request.POST.get('password')
 
-        user = authenticate(email=email, password=password)
+        user = authenticate(request=request, username=email, password=password)
 
-        if user is not None and check_password(password, user.password):
+        if user is not None:
             login(request, user)
             return HttpResponseRedirect(reverse('main_page'))
         else:
