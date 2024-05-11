@@ -83,7 +83,7 @@
 
             <br>
             <div>
-                <input type="submit" value="Add Interest" />
+                <button type="button" id="addInterest">Add Interest</button>
             </div>
 
             <div class="clearfix"></div>
@@ -105,6 +105,8 @@
             </div>
             <br>
             <input type="submit" value="Register" />
+
+            <input type="hidden" id="selectedInterests" name="selected_interests" value="">
         </form>
 
 
@@ -116,3 +118,25 @@
 </body>
 
 </html>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function(){
+        var selectedInterests = [];
+
+        document.getElementById("addInterest").addEventListener("click", function() {
+            var selectElement = document.getElementById("interestSelect");
+            var selectedIndex = selectElement.selectedIndex;
+            if (selectedIndex >= 0) {
+                var selectedValue = selectElement.options[selectedIndex].value;
+                selectedInterests.push(selectedValue);
+                console.log("Selected interests: ", selectedInterests);
+
+
+                selectElement.remove(selectedIndex);
+
+                document.getElementById("selectedInterests").value = JSON.stringify(selectedInterests);
+            }
+               
+        })
+    })
+</script>

@@ -1,8 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
+from djongo import models as djongo_models
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, full_name, gender, birth_date, password=None):
+    def create_user(self, email, full_name, gender, birth_date, password=None, interests=None):
         if not email:
             raise ValueError('Users must have an email address')
 
@@ -10,7 +11,8 @@ class UserManager(BaseUserManager):
             email=self.normalize_email(email),
             full_name=full_name,
             gender=gender,
-            birth_date=birth_date
+            birth_date=birth_date,
+            interests=interests or [],
         )
 
         user.set_password(password)
@@ -44,6 +46,7 @@ class User(AbstractBaseUser):
     full_name = models.CharField(max_length=50)
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     birth_date = models.DateField()
+    interests = djongo_models.JSONField(default=list)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_superuser = models.BooleanField(default=False)
@@ -61,5 +64,7 @@ class User(AbstractBaseUser):
     
     def has_module_perms(self, app_label):
         return True
+    
+
     
 
