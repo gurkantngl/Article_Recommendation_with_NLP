@@ -12,25 +12,37 @@ from transformers import AutoTokenizer, AutoModel
 import os
 import gc
 import torch
+import pickle
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client['article_vectors']
 collection = db['vectors']
+
+def get_scibert_vector(text):
+    model_name = "allenai/scibert_scivocab_uncased"
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModel.from_pretrained(model_name)
+
+    inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
+    outputs = model(**inputs)
+    return outputs.last_hidden_state.mean(dim=1).detach().numpy()   
 
 def index(request):
     return render(request, 'login.html')
 
 def main_page(request):
     if request.user:
+        contents = []
         interests = ["internet", "simulation"]
         model = fasttext.load_model('wiki.en.bin')
-        fasttext_vec = collection.find_one({'fasttext_vectors': {'$exists': True}})
-        fasttext_vectors = fasttext_vec['fasttext_vectors']
+        with open('fasttext_vectors.pkl', 'rb') as f:
+            fasttext_vectors = pickle.load(f)
+        
         print("---------------------",interests,"---------------------\n")
-        interest_vectors = [model.get_word_vector(word) for word in interests if word in model.words]
+        fasttext_interest_vectors = [model.get_word_vector(word) for word in interests if word in model.words]
         abstracts = []
         recommendations = []
-        interest_vectors = np.array(interest_vectors)
+        fasttext_interest_vectors = np.array(fasttext_interest_vectors)
         abstract_vectors = np.array(fasttext_vectors)
         folder_path = 'Inspec/docsutf8'
 
@@ -41,15 +53,29 @@ def main_page(request):
                     abstracts.append(abstract)
         print("---------------",len(abstracts),"------------------")
 
+
         for i, abstract_vector in enumerate(abstract_vectors):
             if abstract_vector.any():
                 abstract_vector = np.expand_dims(abstract_vector, axis=0)
-                similarities = cosine_similarity(interest_vectors, abstract_vector)
+                similarities = cosine_similarity(fasttext_interest_vectors, abstract_vector)
                 for j, similarity in enumerate(similarities):
                     recommendations.append((i, similarity[0]))
 
         recommendations.sort(key=lambda x: x[1], reverse=True)
         fasttext_recommendations = recommendations[:5]
+
+        for idx, similarity in fasttext_recommendations:
+            recommendation = abstracts[idx]
+            content = {}
+            upper_case_indices = [i for i, c in enumerate(recommendation) if c.isupper()]
+            if len(upper_case_indices) >= 2:
+                title_end_index = upper_case_indices[1]
+                title = recommendation[:title_end_index]
+                recommendation = recommendation[title_end_index:]
+                content["title"] = title
+                content["abstract"] = recommendation
+                contents.append(content)
+
         for idx, similarity in fasttext_recommendations:
             print(f"Idx: {idx}")
             print(f"Similarity: {similarity}")
@@ -59,34 +85,55 @@ def main_page(request):
         # gc.collect()
         # torch.cuda.empty_cache()
 
-        model_name = 'allenai/scibert_scivocab_uncased'
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
-        model = AutoModel.from_pretrained(model_name)
-
-        scibert_vec = collection.find_one({'scibert_vectors': {'$exists': True}})
-        scibert_vectors = scibert_vec['scibert_vectors']
-
-        interest_tokens = tokenizer(interests, return_tensors='pt', padding=True, truncation=True)
-        with torch.no_grad():
-            interest_output = model(**interest_tokens)
-        interest_vectors = interest_output.last_hidden_state.mean(dim=1).squeeze().numpy()
+        with open('scibert_vectors.pkl', 'rb') as f:
+            scibert_vectors = pickle.load(f)
         
+        scibert_interest_vectors = [get_scibert_vector(word) for word in interests]
+        abstracts = []
         recommendations = []
-        for i, abstract_vector in enumerate(scibert_vectors):
-            similarities = cosine_similarity([interest_vectors], [abstract_vector])[0]
-            for j, similarity in enumerate(similarities):
-                recommendations.append((i, similarity))
+        scibert_interest_vectors = np.vstack(scibert_interest_vectors)
+        abstract_vectors = np.array(scibert_vectors)
+        folder_path = 'Inspec/docsutf8'
 
+        for file_name in os.listdir(folder_path):
+            if file_name.endswith('.txt'):
+                with open(os.path.join(folder_path, file_name), 'r', encoding='utf-8') as file:
+                    abstract = file.read()
+                    abstracts.append(abstract)
+
+
+        for i, abstract_vector in enumerate(abstract_vectors):
+            if abstract_vector.any():
+                abstract_vector = np.expand_dims(abstract_vector, axis=0)
+                similarities = cosine_similarity(scibert_interest_vectors, abstract_vector)
+                for j, similarity in enumerate(similarities):
+                    recommendations.append((i, similarity[0]))
+        
         recommendations.sort(key=lambda x: x[1], reverse=True)
-        top_recommendations = recommendations[:5]
-        for idx, similarity in top_recommendations:
+        scibert_recommendations = recommendations[:5]
+
+        for idx, similarity in scibert_recommendations:
+            recommendation = abstracts[idx]
+            content = {}
+            upper_case_indices = [i for i, c in enumerate(recommendation) if c.isupper()]
+            if len(upper_case_indices) >= 2:
+                title_end_index = upper_case_indices[1]
+                title = recommendation[:title_end_index]
+                recommendation = recommendation[title_end_index:]
+                content["title"] = title
+                content["abstract"] = recommendation
+                contents.append(content)
+
+        for idx, similarity in scibert_recommendations:
+            print(f"Idx: {idx}")
             print(f"Similarity: {similarity}")
             print("Abstract: ", abstracts[idx])
             print("\n ------------------------------------------------- \n")
 
-        return HttpResponse(f"Hoş geldiniz {request.user.full_name}")
 
-    
+        return render(request, 'article_page.html', {'articles': contents})
+
+   
 
 def register(request):
     interestList = ["Internet",
