@@ -8,4 +8,5 @@ urlpatterns = [
     path('login-db', views.login_db),
     path('register', views.register),
     path('main_page', views.main_page),
+    path('updated_recommendations', views.updated_recommendations),
 ]

@@ -3,16 +3,16 @@ from django.shortcuts import render, redirect
 from django.http.response import HttpResponse
 from django.contrib.auth import authenticate, login
 from django.urls import reverse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, JsonResponse
 from pymongo import MongoClient
 import fasttext
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import AutoTokenizer, AutoModel
 import os
-import gc
-import torch
 import pickle
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 client = MongoClient('mongodb://localhost:27017/')
 db = client['article_vectors']
@@ -30,6 +30,19 @@ def get_scibert_vector(text):
 def index(request):
     return render(request, 'login.html')
 
+
+@csrf_exempt
+def updated_recommendations(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            articles = data.get('articles', [])
+            # İşleme alınacak makaleler burada işlenebilir
+            return JsonResponse({'status': 'success', 'message': 'Öneriler güncellendi', 'data': articles})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Geçersiz JSON verisi'}, status=400)
+    return JsonResponse({'status': 'error', 'message': 'Yalnızca POST istekleri kabul edilir'}, status=400)
+
 def main_page(request):
     if request.user:
         contents = []
@@ -38,7 +51,6 @@ def main_page(request):
         with open('fasttext_vectors.pkl', 'rb') as f:
             fasttext_vectors = pickle.load(f)
         
-        print("---------------------",interests,"---------------------\n")
         fasttext_interest_vectors = [model.get_word_vector(word) for word in interests if word in model.words]
         abstracts = []
         recommendations = []
@@ -51,7 +63,6 @@ def main_page(request):
                 with open(os.path.join(folder_path, file_name), 'r', encoding='utf-8') as file:
                     abstract = file.read()
                     abstracts.append(abstract)
-        print("---------------",len(abstracts),"------------------")
 
 
         for i, abstract_vector in enumerate(abstract_vectors):
@@ -76,11 +87,6 @@ def main_page(request):
                 content["abstract"] = recommendation
                 contents.append(content)
 
-        for idx, similarity in fasttext_recommendations:
-            print(f"Idx: {idx}")
-            print(f"Similarity: {similarity}")
-            print("Abstract: ", abstracts[idx])
-            print("\n ------------------------------------------------- \n")
         
         # gc.collect()
         # torch.cuda.empty_cache()
@@ -123,12 +129,6 @@ def main_page(request):
                 content["title"] = title
                 content["abstract"] = recommendation
                 contents.append(content)
-
-        for idx, similarity in scibert_recommendations:
-            print(f"Idx: {idx}")
-            print(f"Similarity: {similarity}")
-            print("Abstract: ", abstracts[idx])
-            print("\n ------------------------------------------------- \n")
 
 
         return render(request, 'article_page.html', {'articles': contents})
