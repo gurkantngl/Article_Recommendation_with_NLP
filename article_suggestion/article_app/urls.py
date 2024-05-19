@@ -9,4 +9,5 @@ urlpatterns = [
     path('register', views.register),
     path('main_page', views.main_page),
     path('updated_recommendations', views.updated_recommendations),
+    path('search_view', views.search_view),
 ]

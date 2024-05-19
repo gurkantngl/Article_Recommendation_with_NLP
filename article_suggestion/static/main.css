@@ -24,9 +24,9 @@ body {
     position: relative;
     top: 20%;
     margin: auto;
-    margin-top: 5%;
+    margin-top: 5px;
     width: 340px;
-    height: 625px;
+    height: 725px;
     border-radius: 0.35em;
     box-shadow: 0 3px 10px 0 rgba(0, 0, 0, 0.2);
     text-align: center;
@@ -166,6 +166,18 @@ input[type=submit] {
     cursor: pointer;
     border-radius: 3px;
 }
+
+#addInterest {
+    padding: 6px 25px;
+    background: #373E4A;
+    color: #C1C3C6;
+    font-weight: bold;
+    border: 0 none;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+
 
 .register {
     margin: auto;

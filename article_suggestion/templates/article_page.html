@@ -9,10 +9,18 @@
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             document.getElementById("update-button").addEventListener("click", function () {
-                let checkedArticles = [];
+                let fasttextRecommendations = [];
+                let scibertRecommendations = [];
+                
                 document.querySelectorAll('input[type="checkbox"]:checked').forEach(function (checkbox) {
+                    let index = parseInt(checkbox.getAttribute("data-index"));
                     let abstractTitle = checkbox.getAttribute("data-abstract");
-                    checkedArticles.push(abstractTitle);
+                    
+                    if (index >= 0 && index <= 4) {
+                        fasttextRecommendations.push(abstractTitle);
+                    } else if (index >= 5 && index <= 9) {
+                        scibertRecommendations.push(abstractTitle);
+                    }
                 });
 
                 fetch("{% url 'updated_recommendations' %}", {
@@ -21,15 +29,37 @@
                         "Content-Type": "application/json",
                         "X-CSRFToken": "{{ csrf_token }}"
                     },
-                    body: JSON.stringify({ articles: checkedArticles })
+                    body: JSON.stringify({ 
+                        fasttext_recommendations: fasttextRecommendations, 
+                        scibert_recommendations: scibertRecommendations 
+                    })
                 })
                 .then(response => response.json())
                 .then(data => {
-                    // İşlem başarılı olduysa yapılacaklar
                     console.log("Success:", data);
                 })
                 .catch((error) => {
                     console.error("Error:", error);
+                });
+            });
+
+            document.getElementById("search-button").addEventListener("click", function () {
+                let searchString = document.getElementById("search-input").value;
+
+                fetch("{% url 'search_view' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({ search_string: searchString })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Search success:", data);
+                })
+                .catch((error) => {
+                    console.error("Search error:", error);
                 });
             });
         });
@@ -41,8 +71,8 @@
 
         <div class="flex justify-center mb-6">
             <div class="w-full max-w-2xl flex items-center">
-                <input type="text" placeholder="Search articles..." class="flex-grow p-2 border border-green-300 rounded-l-md focus:outline-none focus:border-green-500">
-                <button class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-r-md">
+                <input id="search-input" type="text" placeholder="Search articles..." class="flex-grow p-2 border border-green-300 rounded-l-md focus:outline-none focus:border-green-500">
+                <button type="button" id="search-button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-r-md">
                     <i class="fas fa-search"></i>
                 </button>
                 <button type="button" id="update-button" class="ml-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
