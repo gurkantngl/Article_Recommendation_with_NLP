@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Article Abstracts with Checkboxes</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            const csrftoken = getCookie('csrftoken');
+
+            document.getElementById("update-button").addEventListener("click", function (event) {
+                event.preventDefault();
+
+                let fasttextRecommendations = [];
+                let scibertRecommendations = [];
+
+                document.querySelectorAll('input[type="checkbox"]:checked').forEach(function (checkbox) {
+                    let index = parseInt(checkbox.getAttribute("data-index"));
+                    let abstractTitle = checkbox.getAttribute("data-abstract");
+
+                    if (index >= 0 && index <= 4) {
+                        fasttextRecommendations.push(abstractTitle);
+                    } else if (index >= 5 && index <= 9) {
+                        scibertRecommendations.push(abstractTitle);
+                    }
+                });
+                const updateUrl = "/updating_recommendations/"; // Updating recommendations view'ını düzgün şekilde belirtin
+                fetch(updateUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken
+                    },
+                    body: JSON.stringify({ 
+                        fasttext_recommendations: fasttextRecommendations, 
+                        scibert_recommendations: scibertRecommendations 
+                    })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();  // JSON yerine text olarak alıyoruz
+                })
+                .then(data => {
+                    console.log("Success:", data);
+                    // Yeni sekme aç ve içeriğini göster
+                    const newTab = window.open();
+                    newTab.document.write(data);
+                    newTab.document.close();
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                    console.error("Error message:", error.message);
+                    console.error("Error stack:", error.stack);
+                });
+            });
+
+            document.getElementById("search-button").addEventListener("click", function (event) {
+                event.preventDefault();
+
+                let searchString = document.getElementById("search-input").value;
+
+                fetch("/search_view/", {  // Search view'ını düzgün şekilde belirtin
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": csrftoken
+                    },
+                    body: JSON.stringify({ search_string: searchString })
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();  // First, try to get the response as text
+                })
+                .then(text => {
+                    try {
+                        return JSON.parse(text);  // Then, try to parse it as JSON
+                    } catch (error) {
+                        throw new Error(`Invalid JSON: ${text}`);
+                    }
+                })
+                .then(data => {
+                    console.log("Search success:", data);
+                })
+                .catch((error) => {
+                    console.error("Search error:", error);
+                });
+            });
+        });
+    </script>
+</head>
+<body class="bg-green-50">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-green-800 mb-6 text-center">Article Suggestions</h1>
+
+        <div class="flex justify-center mb-6">
+            <div class="w-full max-w-2xl flex items-center">
+                <input id="search-input" type="text" placeholder="Search articles..." class="flex-grow p-2 border border-green-300 rounded-l-md focus:outline-none focus:border-green-500">
+                <button type="button" id="search-button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-r-md">
+                    <i class="fas fa-search"></i>
+                </button>
+                <button type="button" id="update-button" class="ml-4 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                    Önerileri Güncelle
+                </button>
+            </div>
+            <div id="update-message" class="text-green-800 text-center mb-4" fasttext_precision="{{ fasttext_precision }}" scibert_precision="{{ scibert_precision }}">Öneriler Başarıyla Güncellendi <br> Fasttext Precision: {{fasttext_precision}} <br> Scibert Precision: {{scibert_precision}}</div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-green-800 mb-4 text-center">Fasttext Önerileri</h2>
+
+        {% for article in articles %}
+            {% if forloop.counter == 6 %}
+                <h2 class="text-2xl font-bold text-green-800 mb-4 text-center">Scibert Önerileri</h2>
+            {% endif %}
+            <div class="bg-white shadow-lg rounded-lg p-6 mb-4">
+                <h2 class="text-2xl text-green-700 mb-2">{{ article.title }}</h2>
+                <p class="text-gray-600 mb-4">{{ article.abstract }}</p>
+                <div class="flex items-center">
+                    <span class="mr-2 text-gray-700 font-bold">Similarity: {{ article.similarity }}</span>
+                    <br>
+                    <input type="checkbox" id="checkbox-{{ forloop.counter }}" class="form-checkbox h-6 w-6 text-green-600" data-abstract="{{ article.abstract }}" data-index="{{ forloop.counter }}">
+                    <label for="checkbox-{{ forloop.counter }}" class="ml-2 text-gray-700 font-bold">Makaleyi İşaretle</label>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

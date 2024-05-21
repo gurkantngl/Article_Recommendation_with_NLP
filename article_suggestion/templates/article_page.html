@@ -8,66 +8,103 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            document.getElementById("update-button").addEventListener("click", function () {
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
+            const csrftoken = getCookie('csrftoken');
+
+            document.getElementById("update-button").addEventListener("click", function (event) {
+                event.preventDefault();
+
                 let fasttextRecommendations = [];
                 let scibertRecommendations = [];
-                
+
                 document.querySelectorAll('input[type="checkbox"]:checked').forEach(function (checkbox) {
                     let index = parseInt(checkbox.getAttribute("data-index"));
                     let abstractTitle = checkbox.getAttribute("data-abstract");
-                    
+
                     if (index >= 0 && index <= 4) {
                         fasttextRecommendations.push(abstractTitle);
                     } else if (index >= 5 && index <= 9) {
                         scibertRecommendations.push(abstractTitle);
                     }
                 });
-
-                fetch("{% url 'updated_recommendations' %}", {
+                const updateUrl = "/updating_recommendations/"; // Updating recommendations view'ını düzgün şekilde belirtin
+                fetch(updateUrl, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}"
+                        "X-CSRFToken": csrftoken
                     },
                     body: JSON.stringify({ 
                         fasttext_recommendations: fasttextRecommendations, 
                         scibert_recommendations: scibertRecommendations 
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.text();  // JSON yerine text olarak alıyoruz
+                })
                 .then(data => {
                     console.log("Success:", data);
+                    // Yeni sekme aç ve içeriğini göster
+                    const newTab = window.open();
+                    newTab.document.write(data);
+                    newTab.document.close();
                 })
                 .catch((error) => {
                     console.error("Error:", error);
+                    console.error("Error message:", error.message);
+                    console.error("Error stack:", error.stack);
                 });
             });
 
-            document.getElementById("search-button").addEventListener("click", function () {
-                let searchString = document.getElementById("search-input").value;
+            document.getElementById("search-button").addEventListener("click", function (event) {
+                event.preventDefault();
 
-                fetch("{% url 'search_view' %}", {
+                let searchString = document.getElementById("search-input").value;
+                
+                let csrftoken = getCookie('csrftoken');
+
+                fetch("/search_view/", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}"
+                        "X-CSRFToken": csrftoken
                     },
                     body: JSON.stringify({ search_string: searchString })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    console.log("Search success:", data);
+                .then(response => {
+                    return response.text();  // Önce cevabı text olarak al
                 })
-                .catch((error) => {
-                    console.error("Search error:", error);
-                });
+                .then(data => {
+                    console.log("Raw response text:", data);  // Yanıtı konsola yazdırın
+                    console.log("Search success:", data);
+                    const newTab = window.open();
+                    newTab.document.write(data);
+                    newTab.document.close();
+                })
             });
         });
     </script>
 </head>
 <body class="bg-green-50">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-green-800 mb-6 text-center">Article Abstracts</h1>
+        <h1 class="text-3xl font-bold text-green-800 mb-6 text-center">Article Suggestions</h1>
 
         <div class="flex justify-center mb-6">
             <div class="w-full max-w-2xl flex items-center">
@@ -79,20 +116,23 @@
                     Önerileri Güncelle
                 </button>
             </div>
+            <div id="update-message" class="hidden text-green-800 text-center mb-4" fasttext_precision="{{ fasttext_precision }}" scibert_precision="{{ scibert_precision }}">Öneriler Başarıyla Güncellendi</div>
         </div>
 
-        <h2 class="text-2xl font-bold text-green-800 mb-4">Fasttext Önerileri</h2>
+        <h2 class="text-2xl font-bold text-green-800 mb-4 text-center">Fasttext Önerileri</h2>
 
         {% for article in articles %}
             {% if forloop.counter == 6 %}
-                <h2 class="text-2xl font-bold text-green-800 mb-4">Scibert Önerileri</h2>
+                <h2 class="text-2xl font-bold text-green-800 mb-4 text-center">Scibert Önerileri</h2>
             {% endif %}
             <div class="bg-white shadow-lg rounded-lg p-6 mb-4">
                 <h2 class="text-2xl text-green-700 mb-2">{{ article.title }}</h2>
                 <p class="text-gray-600 mb-4">{{ article.abstract }}</p>
                 <div class="flex items-center">
+                    <span class="mr-2 text-gray-700 font-bold">Similarity: {{ article.similarity }}</span>
+                    <br>
                     <input type="checkbox" id="checkbox-{{ forloop.counter }}" class="form-checkbox h-6 w-6 text-green-600" data-abstract="{{ article.abstract }}" data-index="{{ forloop.counter }}">
-                    <label for="checkbox-{{ forloop.counter }}" class="ml-2 text-gray-700 font-bold">Öneriyi Doğrula</label>
+                    <label for="checkbox-{{ forloop.counter }}" class="ml-2 text-gray-700 font-bold">Makaleyi İşaretle</label>
                 </div>
             </div>
         {% endfor %}
